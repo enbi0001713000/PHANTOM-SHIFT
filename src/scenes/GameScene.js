@@ -81,12 +81,13 @@ export class GameScene extends Phaser.Scene {
     this.detectMeter = 0;
     this.hasGem = false;
     this.chaseActive = false;
+    this.isStageEnding = false;
     this.respawnPoint = { ...this.level.entities.playerSpawn };
     this.noiseEvents = [];
   }
 
   update(time, delta) {
-    if (this.isPortraitPaused) return;
+    if (this.isPortraitPaused || this.isStageEnding) return;
 
     this.elapsed += delta / 1000;
     this.updateHud();
@@ -431,10 +432,56 @@ export class GameScene extends Phaser.Scene {
   }
 
   tryGoal() {
-    if (!this.hasGem) return;
+    if (!this.hasGem || this.isStageEnding) return;
+    this.isStageEnding = true;
     this.audio.playSE("goal");
     this.audio.stopBgm();
-    this.endStage();
+    this.startGoalSequence();
+  }
+
+  startGoalSequence() {
+    const { width, height } = this.scale;
+    this.player.setVelocity(0, 0);
+    this.physics.world.pause();
+    (this.touchControls || []).forEach((control) => {
+      control.disableInteractive();
+      control.setVisible(false);
+    });
+
+    const successText = this.add
+      .text(width / 2, height / 2 - 40, "逃走成功", {
+        fontSize: "36px",
+        color: "#9be7ff",
+        fontStyle: "bold",
+        stroke: "#0b0d16",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
+
+    this.tweens.add({
+      targets: successText,
+      y: successText.y - 50,
+      alpha: 0,
+      duration: 1200,
+      ease: "Sine.easeOut",
+      onComplete: () => {
+        const prompt = this.add
+          .text(width / 2, height / 2 + 20, "画面をタップしてリザルトへ", {
+            fontSize: "20px",
+            color: "#e6f6ff",
+            backgroundColor: "rgba(11, 13, 22, 0.6)",
+            padding: { x: 12, y: 6 },
+          })
+          .setOrigin(0.5)
+          .setScrollFactor(0);
+
+        this.input.once("pointerdown", () => {
+          prompt.destroy();
+          this.endStage();
+        });
+      },
+    });
   }
 
   endStage() {
