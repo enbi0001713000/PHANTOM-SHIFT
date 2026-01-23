@@ -35,7 +35,7 @@ export class GameScene extends Phaser.Scene {
       width: this.level.map[0].length * this.level.tileSize,
       height: this.level.map.length * this.level.tileSize,
     };
-    this.physics.world.setBounds(0, 0, this.worldBounds.width, this.worldBounds.height);
+    this.physics.world.setBounds(0, 0, this.worldBounds.width, this.worldBounds.height, true, true, true, false);
     this.cameras.main.setBounds(0, 0, this.worldBounds.width, this.worldBounds.height);
 
     this.buildMap();
@@ -103,6 +103,10 @@ export class GameScene extends Phaser.Scene {
     this.touchState.jumpPressed = false;
 
     this.player.update(delta, input, (noise) => this.noiseEvents.push(noise));
+
+    if (this.player.y > this.worldBounds.height + this.level.tileSize) {
+      this.handleDeath("fall");
+    }
 
     this.updateGuards(delta);
     this.updateTutorial();
