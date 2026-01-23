@@ -499,7 +499,7 @@ export class GameScene extends Phaser.Scene {
         } else {
           waitForNextTap();
         }
-      },
+       },
     });
   }
 
