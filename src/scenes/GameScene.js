@@ -84,8 +84,35 @@ export class GameScene extends Phaser.Scene {
       retry: "R",
     });
 
+    this.input.keyboard.addCapture([
+      Phaser.Input.Keyboard.KeyCodes.A,
+      Phaser.Input.Keyboard.KeyCodes.D,
+      Phaser.Input.Keyboard.KeyCodes.S,
+      Phaser.Input.Keyboard.KeyCodes.LEFT,
+      Phaser.Input.Keyboard.KeyCodes.RIGHT,
+      Phaser.Input.Keyboard.KeyCodes.DOWN,
+      Phaser.Input.Keyboard.KeyCodes.SPACE,
+      Phaser.Input.Keyboard.KeyCodes.J,
+      Phaser.Input.Keyboard.KeyCodes.K,
+      Phaser.Input.Keyboard.KeyCodes.ESC,
+      Phaser.Input.Keyboard.KeyCodes.R,
+    ]);
+
     this.input.keyboard.on("keydown-ESC", () => this.pauseGame());
     this.input.keyboard.on("keydown-R", () => this.restartStage());
+    this.keyboardAttackHandler = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (this.touchState) {
+        this.touchState.attackPressed = true;
+      }
+    };
+    this.input.keyboard.on("keydown-J", this.keyboardAttackHandler);
+    this.input.keyboard.on("keydown-K", this.keyboardAttackHandler);
+    this.events.once("shutdown", () => {
+      this.input.keyboard.off("keydown-J", this.keyboardAttackHandler);
+      this.input.keyboard.off("keydown-K", this.keyboardAttackHandler);
+    });
 
     this.elapsed = 0;
     this.detectedCount = 0;
