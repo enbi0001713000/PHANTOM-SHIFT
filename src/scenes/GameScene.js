@@ -84,6 +84,8 @@ export class GameScene extends Phaser.Scene {
     this.isStageEnding = false;
     this.respawnPoint = { ...this.level.entities.playerSpawn };
     this.noiseEvents = [];
+
+    this.setupTutorial();
   }
 
   update(time, delta) {
@@ -103,6 +105,7 @@ export class GameScene extends Phaser.Scene {
     this.player.update(delta, input, (noise) => this.noiseEvents.push(noise));
 
     this.updateGuards(delta);
+    this.updateTutorial();
   }
 
   updateGuards(delta) {
@@ -429,6 +432,7 @@ export class GameScene extends Phaser.Scene {
     this.hasGem = true;
     this.gemSprite.setVisible(false);
     this.audio.playSE("gem");
+    this.finishTutorialStep("gem");
   }
 
   tryGoal() {
@@ -436,7 +440,139 @@ export class GameScene extends Phaser.Scene {
     this.isStageEnding = true;
     this.audio.playSE("goal");
     this.audio.stopBgm();
+    this.finishTutorialStep("goal");
     this.startGoalSequence();
+  }
+
+  setupTutorial() {
+    if (this.stageId !== "tutorial") return;
+    const startX = this.player.x;
+    this.tutorialState = {
+      active: true,
+      currentIndex: 0,
+      startX,
+      isCompleting: false,
+      steps: [
+        {
+          id: "move",
+          text: "左右に移動してみよう\n(A/D または ←/→)",
+          check: () => Math.abs(this.player.x - startX) >= 48,
+        },
+        {
+          id: "jump",
+          text: "ジャンプしてみよう\n(Space / ジャンプボタン)",
+          check: () => this.player.body.velocity.y < -10,
+        },
+        {
+          id: "crouch",
+          text: "しゃがんでみよう\n(S / ↓)",
+          check: () => this.player.isCrouching,
+        },
+        {
+          id: "shadow",
+          text: "影に入って隠れてみよう",
+          check: () => this.isInShadow(this.player.x, this.player.y),
+        },
+        {
+          id: "gem",
+          text: "宝石を回収しよう",
+          check: () => this.hasGem,
+        },
+        {
+          id: "goal",
+          text: "宝石を持ってゴールに到達しよう",
+          check: () => this.hasGem && this.isPlayerInGoal(),
+        },
+      ],
+    };
+    this.createTutorialOverlay();
+    this.startTutorialStep(0);
+  }
+
+  createTutorialOverlay() {
+    const { width } = this.scale;
+    const panelWidth = Math.min(520, width - 40);
+    this.tutorialUi = {
+      panel: this.add
+        .rectangle(width / 2, 80, panelWidth, 110, 0x0b0d16, 0.7)
+        .setScrollFactor(0)
+        .setDepth(10),
+      title: this.add
+        .text(width / 2, 45, "チュートリアル", {
+          fontSize: "18px",
+          color: "#9be7ff",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(11),
+      body: this.add
+        .text(width / 2, 85, "", {
+          fontSize: "16px",
+          color: "#e6f6ff",
+          align: "center",
+          wordWrap: { width: panelWidth - 30 },
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(11),
+      progress: this.add
+        .text(width / 2, 120, "", {
+          fontSize: "12px",
+          color: "#7dd7ff",
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(11),
+    };
+  }
+
+  startTutorialStep(index) {
+    const step = this.tutorialState.steps[index];
+    if (!step) {
+      this.clearTutorial();
+      return;
+    }
+    this.tutorialState.currentIndex = index;
+    this.tutorialState.currentStep = step;
+    this.tutorialUi.body.setText(step.text);
+    this.tutorialUi.progress.setText(`STEP ${index + 1}/${this.tutorialState.steps.length}`);
+  }
+
+  updateTutorial() {
+    if (!this.tutorialState?.active || this.tutorialState.isCompleting) return;
+    const step = this.tutorialState.currentStep;
+    if (!step?.check) return;
+    if (step.check()) {
+      this.completeTutorialStep();
+    }
+  }
+
+  completeTutorialStep() {
+    if (!this.tutorialState?.active || this.tutorialState.isCompleting) return;
+    this.tutorialState.isCompleting = true;
+    this.tutorialUi.body.setText(`${this.tutorialState.currentStep.text}\n\n✅ OK!`);
+    this.time.delayedCall(600, () => {
+      this.tutorialState.isCompleting = false;
+      this.startTutorialStep(this.tutorialState.currentIndex + 1);
+    });
+  }
+
+  finishTutorialStep(stepId) {
+    if (!this.tutorialState?.active) return;
+    if (this.tutorialState.currentStep?.id !== stepId) return;
+    this.completeTutorialStep();
+  }
+
+  clearTutorial() {
+    if (!this.tutorialState?.active) return;
+    this.tutorialState.active = false;
+    Object.values(this.tutorialUi || {}).forEach((element) => element?.setVisible(false));
+  }
+
+  isPlayerInGoal() {
+    const bounds = this.goalZone.getBounds();
+    return bounds.contains(this.player.x, this.player.y);
   }
 
   startGoalSequence() {
