@@ -441,6 +441,7 @@ export class GameScene extends Phaser.Scene {
 
   startGoalSequence() {
     const { width, height } = this.scale;
+    const isDesktop = this.sys.game.device.os.desktop;
     this.player.setVelocity(0, 0);
     this.physics.world.pause();
     (this.touchControls || []).forEach((control) => {
@@ -466,8 +467,14 @@ export class GameScene extends Phaser.Scene {
       duration: 1200,
       ease: "Sine.easeOut",
       onComplete: () => {
+        const tapZone = this.add
+          .zone(0, 0, width, height)
+          .setOrigin(0, 0)
+          .setScrollFactor(0)
+          .setInteractive();
+        const promptText = isDesktop ? "画面をクリックしてリザルトへ" : "画面をタップしてリザルトへ";
         const prompt = this.add
-          .text(width / 2, height / 2 + 20, "画面をタップしてリザルトへ", {
+          .text(width / 2, height / 2 + 20, promptText, {
             fontSize: "20px",
             color: "#e6f6ff",
             backgroundColor: "rgba(11, 13, 22, 0.6)",
@@ -476,11 +483,23 @@ export class GameScene extends Phaser.Scene {
           .setOrigin(0.5)
           .setScrollFactor(0);
 
-        this.input.once("pointerdown", () => {
+        const advanceToResult = () => {
+          tapZone.disableInteractive();
+          tapZone.destroy();
           prompt.destroy();
           this.endStage();
-        });
-      },
+        };
+
+        const waitForNextTap = () => {
+          tapZone.once("pointerdown", advanceToResult);
+        };
+
+        if (this.input.activePointer.isDown) {
+          tapZone.once("pointerup", () => waitForNextTap());
+        } else {
+          waitForNextTap();
+        }
+       },
     });
   }
 
