@@ -261,17 +261,44 @@ export class GameScene extends Phaser.Scene {
 
   createProjectiles() {
     this.projectiles = this.physics.add.group();
-    this.physics.world.on("worldbounds", (body) => {
+    this.projectileWorldBoundsHandler = (body) => {
       if (!body?.gameObject) return;
       if (body.gameObject.texture?.key === "pellet") {
         body.gameObject.destroy();
       }
+    };
+    this.physics.world.on("worldbounds", this.projectileWorldBoundsHandler);
+    this.events.once("shutdown", () => {
+      this.physics.world.off("worldbounds", this.projectileWorldBoundsHandler);
     });
   }
 
+  isTextureReady(key) {
+    const texture = this.textures.get(key);
+    if (!texture || texture.key === "__MISSING") return false;
+    const image = texture.getSourceImage();
+    return Boolean(image && image.width > 0 && image.height > 0);
+  }
+
   fireProjectile() {
+    if (!this.projectiles) {
+      this.createProjectiles();
+    }
+    if (!this.isTextureReady("pellet")) {
+      if (this.textures.exists("pellet")) {
+        this.textures.remove("pellet");
+      }
+      this.createTextures();
+    }
+    if (!this.isTextureReady("pellet")) {
+      return;
+    }
     const direction = this.player.flipX ? -1 : 1;
     const pellet = this.projectiles.create(this.player.x + direction * 20, this.player.y - 6, "pellet");
+    if (!pellet?.body) {
+      pellet?.destroy();
+      return;
+    }
     pellet.setVelocityX(direction * 320);
     pellet.setAllowGravity(false);
     pellet.setCollideWorldBounds(true);
@@ -307,136 +334,167 @@ export class GameScene extends Phaser.Scene {
   }
 
   createTextures() {
-    if (this.textures.exists("tile")) return;
+    const requiredTextures = [
+      "tile",
+      "wall",
+      "spike",
+      "player",
+      "player-crouch",
+      "guard",
+      "gem",
+      "checkpoint",
+      "pellet",
+    ];
+    if (requiredTextures.every((key) => this.textures.exists(key))) {
+      return;
+    }
     const graphics = this.add.graphics();
-    graphics.fillStyle(0xd8d3c4, 1);
-    graphics.fillRect(0, 0, 32, 32);
-    graphics.lineStyle(2, 0xe8e2d6, 1);
-    graphics.strokeRect(2, 2, 28, 28);
-    graphics.lineStyle(1, 0xb8b1a3, 0.8);
-    graphics.beginPath();
-    graphics.moveTo(4, 10);
-    graphics.lineTo(28, 10);
-    graphics.moveTo(4, 22);
-    graphics.lineTo(28, 22);
-    graphics.strokePath();
-    graphics.generateTexture("tile", 32, 32);
+    if (!this.textures.exists("tile")) {
+      graphics.fillStyle(0xd8d3c4, 1);
+      graphics.fillRect(0, 0, 32, 32);
+      graphics.lineStyle(2, 0xe8e2d6, 1);
+      graphics.strokeRect(2, 2, 28, 28);
+      graphics.lineStyle(1, 0xb8b1a3, 0.8);
+      graphics.beginPath();
+      graphics.moveTo(4, 10);
+      graphics.lineTo(28, 10);
+      graphics.moveTo(4, 22);
+      graphics.lineTo(28, 22);
+      graphics.strokePath();
+      graphics.generateTexture("tile", 32, 32);
+    }
 
     graphics.clear();
-    graphics.fillStyle(0x5a514a, 1);
-    graphics.fillRect(0, 0, 32, 32);
-    graphics.fillStyle(0x2d2724, 1);
-    graphics.fillRect(2, 2, 28, 28);
-    graphics.lineStyle(2, 0xd2b66a, 1);
-    graphics.strokeRect(3, 3, 26, 26);
-    graphics.fillStyle(0x8c7f74, 1);
-    graphics.fillRect(6, 8, 20, 6);
-    graphics.fillRect(6, 18, 20, 6);
-    graphics.generateTexture("wall", 32, 32);
+    if (!this.textures.exists("wall")) {
+      graphics.fillStyle(0x5a514a, 1);
+      graphics.fillRect(0, 0, 32, 32);
+      graphics.fillStyle(0x2d2724, 1);
+      graphics.fillRect(2, 2, 28, 28);
+      graphics.lineStyle(2, 0xd2b66a, 1);
+      graphics.strokeRect(3, 3, 26, 26);
+      graphics.fillStyle(0x8c7f74, 1);
+      graphics.fillRect(6, 8, 20, 6);
+      graphics.fillRect(6, 18, 20, 6);
+      graphics.generateTexture("wall", 32, 32);
+    }
 
     graphics.clear();
-    graphics.fillStyle(0x2b0f14, 1);
-    graphics.fillRect(0, 0, 32, 32);
-    graphics.lineStyle(3, 0xff4b6b, 1);
-    graphics.beginPath();
-    graphics.moveTo(4, 6);
-    graphics.lineTo(28, 6);
-    graphics.moveTo(4, 16);
-    graphics.lineTo(28, 16);
-    graphics.moveTo(4, 26);
-    graphics.lineTo(28, 26);
-    graphics.strokePath();
-    graphics.generateTexture("spike", 32, 32);
+    if (!this.textures.exists("spike")) {
+      graphics.fillStyle(0x2b0f14, 1);
+      graphics.fillRect(0, 0, 32, 32);
+      graphics.lineStyle(3, 0xff4b6b, 1);
+      graphics.beginPath();
+      graphics.moveTo(4, 6);
+      graphics.lineTo(28, 6);
+      graphics.moveTo(4, 16);
+      graphics.lineTo(28, 16);
+      graphics.moveTo(4, 26);
+      graphics.lineTo(28, 26);
+      graphics.strokePath();
+      graphics.generateTexture("spike", 32, 32);
+    }
 
     graphics.clear();
-    graphics.fillStyle(0x101218, 1);
-    graphics.fillRect(8, 12, 16, 28);
-    graphics.fillStyle(0x22252f, 1);
-    graphics.fillRect(6, 18, 4, 22);
-    graphics.fillRect(22, 18, 4, 22);
-    graphics.fillStyle(0xf4f1e6, 1);
-    graphics.fillRect(14, 18, 4, 10);
-    graphics.fillStyle(0xb72033, 1);
-    graphics.fillRect(16, 20, 2, 14);
-    graphics.fillStyle(0x0c0d12, 1);
-    graphics.fillRect(6, 26, 20, 16);
-    graphics.fillStyle(0x11151e, 1);
-    graphics.fillTriangle(6, 26, 26, 26, 32, 48);
-    graphics.fillTriangle(26, 26, 6, 26, 0, 48);
-    graphics.fillStyle(0x0a0b10, 1);
-    graphics.fillRect(10, 4, 12, 8);
-    graphics.fillRect(8, 2, 16, 4);
-    graphics.fillStyle(0x1b1f2b, 1);
-    graphics.fillRect(12, 6, 8, 2);
-    graphics.generateTexture("player", 32, 48);
+    if (!this.textures.exists("player")) {
+      graphics.fillStyle(0x101218, 1);
+      graphics.fillRect(8, 12, 16, 28);
+      graphics.fillStyle(0x22252f, 1);
+      graphics.fillRect(6, 18, 4, 22);
+      graphics.fillRect(22, 18, 4, 22);
+      graphics.fillStyle(0xf4f1e6, 1);
+      graphics.fillRect(14, 18, 4, 10);
+      graphics.fillStyle(0xb72033, 1);
+      graphics.fillRect(16, 20, 2, 14);
+      graphics.fillStyle(0x0c0d12, 1);
+      graphics.fillRect(6, 26, 20, 16);
+      graphics.fillStyle(0x11151e, 1);
+      graphics.fillTriangle(6, 26, 26, 26, 32, 48);
+      graphics.fillTriangle(26, 26, 6, 26, 0, 48);
+      graphics.fillStyle(0x0a0b10, 1);
+      graphics.fillRect(10, 4, 12, 8);
+      graphics.fillRect(8, 2, 16, 4);
+      graphics.fillStyle(0x1b1f2b, 1);
+      graphics.fillRect(12, 6, 8, 2);
+      graphics.generateTexture("player", 32, 48);
+    }
 
     graphics.clear();
-    graphics.fillStyle(0x101218, 1);
-    graphics.fillRect(8, 24, 16, 16);
-    graphics.fillStyle(0x22252f, 1);
-    graphics.fillRect(6, 26, 4, 14);
-    graphics.fillRect(22, 26, 4, 14);
-    graphics.fillStyle(0xf4f1e6, 1);
-    graphics.fillRect(14, 26, 4, 8);
-    graphics.fillStyle(0xb72033, 1);
-    graphics.fillRect(16, 28, 2, 12);
-    graphics.fillStyle(0x0c0d12, 1);
-    graphics.fillRect(6, 32, 20, 10);
-    graphics.fillStyle(0x11151e, 1);
-    graphics.fillTriangle(6, 32, 26, 32, 32, 46);
-    graphics.fillTriangle(26, 32, 6, 32, 0, 46);
-    graphics.fillStyle(0x0a0b10, 1);
-    graphics.fillRect(10, 16, 12, 8);
-    graphics.fillStyle(0x1b1f2b, 1);
-    graphics.fillRect(12, 18, 8, 2);
-    graphics.generateTexture("player-crouch", 32, 48);
+    if (!this.textures.exists("player-crouch")) {
+      graphics.fillStyle(0x101218, 1);
+      graphics.fillRect(8, 24, 16, 16);
+      graphics.fillStyle(0x22252f, 1);
+      graphics.fillRect(6, 26, 4, 14);
+      graphics.fillRect(22, 26, 4, 14);
+      graphics.fillStyle(0xf4f1e6, 1);
+      graphics.fillRect(14, 26, 4, 8);
+      graphics.fillStyle(0xb72033, 1);
+      graphics.fillRect(16, 28, 2, 12);
+      graphics.fillStyle(0x0c0d12, 1);
+      graphics.fillRect(6, 32, 20, 10);
+      graphics.fillStyle(0x11151e, 1);
+      graphics.fillTriangle(6, 32, 26, 32, 32, 46);
+      graphics.fillTriangle(26, 32, 6, 32, 0, 46);
+      graphics.fillStyle(0x0a0b10, 1);
+      graphics.fillRect(10, 16, 12, 8);
+      graphics.fillStyle(0x1b1f2b, 1);
+      graphics.fillRect(12, 18, 8, 2);
+      graphics.generateTexture("player-crouch", 32, 48);
+    }
 
     graphics.clear();
-    graphics.fillStyle(0x808891, 1);
-    graphics.fillRoundedRect(6, 16, 20, 26, 4);
-    graphics.fillStyle(0xb9c1cc, 1);
-    graphics.fillRoundedRect(9, 20, 14, 14, 3);
-    graphics.fillStyle(0x4b525c, 1);
-    graphics.fillRect(10, 36, 4, 8);
-    graphics.fillRect(18, 36, 4, 8);
-    graphics.fillStyle(0x8fd9ff, 1);
-    graphics.fillCircle(13, 24, 3);
-    graphics.fillCircle(19, 24, 3);
-    graphics.fillStyle(0x30343b, 1);
-    graphics.fillRoundedRect(9, 6, 14, 10, 3);
-    graphics.fillStyle(0x9aa3ad, 1);
-    graphics.fillRect(14, 2, 4, 4);
-    graphics.fillStyle(0xffd34d, 1);
-    graphics.fillCircle(16, 2, 2);
-    graphics.fillStyle(0x666f7a, 1);
-    graphics.fillRect(2, 22, 6, 12);
-    graphics.fillRect(24, 22, 6, 12);
-    graphics.generateTexture("guard", 32, 48);
+    if (!this.textures.exists("guard")) {
+      graphics.fillStyle(0x808891, 1);
+      graphics.fillRoundedRect(6, 16, 20, 26, 4);
+      graphics.fillStyle(0xb9c1cc, 1);
+      graphics.fillRoundedRect(9, 20, 14, 14, 3);
+      graphics.fillStyle(0x4b525c, 1);
+      graphics.fillRect(10, 36, 4, 8);
+      graphics.fillRect(18, 36, 4, 8);
+      graphics.fillStyle(0x8fd9ff, 1);
+      graphics.fillCircle(13, 24, 3);
+      graphics.fillCircle(19, 24, 3);
+      graphics.fillStyle(0x30343b, 1);
+      graphics.fillRoundedRect(9, 6, 14, 10, 3);
+      graphics.fillStyle(0x9aa3ad, 1);
+      graphics.fillRect(14, 2, 4, 4);
+      graphics.fillStyle(0xffd34d, 1);
+      graphics.fillCircle(16, 2, 2);
+      graphics.fillStyle(0x666f7a, 1);
+      graphics.fillRect(2, 22, 6, 12);
+      graphics.fillRect(24, 22, 6, 12);
+      graphics.generateTexture("guard", 32, 48);
+    }
 
     graphics.clear();
-    graphics.fillStyle(0x5b4634, 1);
-    graphics.fillRect(6, 20, 20, 10);
-    graphics.fillStyle(0xd6c08b, 1);
-    graphics.fillRect(8, 10, 16, 12);
-    graphics.fillStyle(0x6ae0ff, 1);
-    graphics.fillCircle(16, 16, 6);
-    graphics.generateTexture("gem", 32, 32);
+    if (!this.textures.exists("gem")) {
+      graphics.fillStyle(0x5b4634, 1);
+      graphics.fillRect(6, 20, 20, 10);
+      graphics.fillStyle(0xd6c08b, 1);
+      graphics.fillRect(8, 10, 16, 12);
+      graphics.fillStyle(0x6ae0ff, 1);
+      graphics.fillCircle(16, 16, 6);
+      graphics.generateTexture("gem", 32, 32);
+    }
 
     graphics.clear();
-    graphics.fillStyle(0x2b1f17, 1);
-    graphics.fillRect(0, 0, 28, 28);
-    graphics.fillStyle(0xcba85a, 1);
-    graphics.fillRect(4, 4, 20, 20);
-    graphics.fillStyle(0xede5d4, 1);
-    graphics.fillRect(7, 7, 14, 14);
-    graphics.generateTexture("checkpoint", 28, 28);
+    if (!this.textures.exists("checkpoint")) {
+      graphics.fillStyle(0x2b1f17, 1);
+      graphics.fillRect(0, 0, 28, 28);
+      graphics.fillStyle(0xcba85a, 1);
+      graphics.fillRect(4, 4, 20, 20);
+      graphics.fillStyle(0xede5d4, 1);
+      graphics.fillRect(7, 7, 14, 14);
+      graphics.generateTexture("checkpoint", 28, 28);
+    }
 
     graphics.clear();
-    graphics.fillStyle(0xd8d3c4, 1);
-    graphics.fillCircle(6, 6, 6);
-    graphics.lineStyle(2, 0x8b7d66, 1);
-    graphics.strokeCircle(6, 6, 5);
-    graphics.generateTexture("pellet", 12, 12);
+    if (!this.textures.exists("pellet")) {
+      graphics.fillStyle(0xd8d3c4, 1);
+      graphics.fillCircle(6, 6, 6);
+      graphics.lineStyle(2, 0x8b7d66, 1);
+      graphics.strokeCircle(6, 6, 5);
+      graphics.generateTexture("pellet", 12, 12);
+    }
 
     graphics.destroy();
   }
