@@ -426,47 +426,51 @@ export class GameScene extends Phaser.Scene {
 
     graphics.clear();
     if (!this.textures.exists("player")) {
-      graphics.fillStyle(0x101218, 1);
+      graphics.fillStyle(0x2a3246, 1);
       graphics.fillRect(8, 12, 16, 28);
-      graphics.fillStyle(0x22252f, 1);
+      graphics.lineStyle(2, 0x7fd6ff, 0.9);
+      graphics.strokeRect(7, 11, 18, 30);
+      graphics.fillStyle(0x3b455c, 1);
       graphics.fillRect(6, 18, 4, 22);
       graphics.fillRect(22, 18, 4, 22);
       graphics.fillStyle(0xf4f1e6, 1);
       graphics.fillRect(14, 18, 4, 10);
       graphics.fillStyle(0xb72033, 1);
       graphics.fillRect(16, 20, 2, 14);
-      graphics.fillStyle(0x0c0d12, 1);
+      graphics.fillStyle(0x1b2131, 1);
       graphics.fillRect(6, 26, 20, 16);
-      graphics.fillStyle(0x11151e, 1);
+      graphics.fillStyle(0x242b3e, 1);
       graphics.fillTriangle(6, 26, 26, 26, 32, 48);
       graphics.fillTriangle(26, 26, 6, 26, 0, 48);
-      graphics.fillStyle(0x0a0b10, 1);
+      graphics.fillStyle(0x232a3b, 1);
       graphics.fillRect(10, 4, 12, 8);
       graphics.fillRect(8, 2, 16, 4);
-      graphics.fillStyle(0x1b1f2b, 1);
+      graphics.fillStyle(0x6ad0ff, 1);
       graphics.fillRect(12, 6, 8, 2);
       graphics.generateTexture("player", 32, 48);
     }
 
     graphics.clear();
     if (!this.textures.exists("player-crouch")) {
-      graphics.fillStyle(0x101218, 1);
+      graphics.fillStyle(0x2a3246, 1);
       graphics.fillRect(8, 24, 16, 16);
-      graphics.fillStyle(0x22252f, 1);
+      graphics.lineStyle(2, 0x7fd6ff, 0.9);
+      graphics.strokeRect(7, 23, 18, 18);
+      graphics.fillStyle(0x3b455c, 1);
       graphics.fillRect(6, 26, 4, 14);
       graphics.fillRect(22, 26, 4, 14);
       graphics.fillStyle(0xf4f1e6, 1);
       graphics.fillRect(14, 26, 4, 8);
       graphics.fillStyle(0xb72033, 1);
       graphics.fillRect(16, 28, 2, 12);
-      graphics.fillStyle(0x0c0d12, 1);
+      graphics.fillStyle(0x1b2131, 1);
       graphics.fillRect(6, 32, 20, 10);
-      graphics.fillStyle(0x11151e, 1);
+      graphics.fillStyle(0x242b3e, 1);
       graphics.fillTriangle(6, 32, 26, 32, 32, 46);
       graphics.fillTriangle(26, 32, 6, 32, 0, 46);
-      graphics.fillStyle(0x0a0b10, 1);
+      graphics.fillStyle(0x232a3b, 1);
       graphics.fillRect(10, 16, 12, 8);
-      graphics.fillStyle(0x1b1f2b, 1);
+      graphics.fillStyle(0x6ad0ff, 1);
       graphics.fillRect(12, 18, 8, 2);
       graphics.generateTexture("player-crouch", 32, 48);
     }
