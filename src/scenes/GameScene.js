@@ -15,7 +15,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.json(`level-${this.stageId}`, `levels/${this.stageId}.json`);
+    const cacheKey = `level-${this.stageId}`;
+    if (this.cache.json.exists(cacheKey)) {
+      this.cache.json.remove(cacheKey);
+    }
+    const cacheBuster = Date.now();
+    this.load.json(cacheKey, `levels/${this.stageId}.json?cb=${cacheBuster}`);
   }
 
   create() {
