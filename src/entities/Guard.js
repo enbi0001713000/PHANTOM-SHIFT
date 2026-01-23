@@ -3,6 +3,7 @@ const GuardState = {
   ALERT: "Alert",
   CHASE: "Chase",
   SEARCH: "Search",
+  STUNNED: "Stunned",
 };
 
 export class Guard extends Phaser.Physics.Arcade.Sprite {
@@ -24,9 +25,23 @@ export class Guard extends Phaser.Physics.Arcade.Sprite {
     this.searchTimer = 0;
     this.alertTimer = 0;
     this.patrolIndex = 0;
+    this.stunTimer = 0;
   }
 
   update(delta, player, context) {
+    if (this.stunTimer > 0) {
+      this.stunTimer -= delta / 1000;
+      this.setVelocityX(0);
+      this.detectMeter = 0;
+      if (this.stunTimer <= 0) {
+        this.stunTimer = 0;
+        this.state = GuardState.PATROL;
+      } else {
+        this.state = GuardState.STUNNED;
+        return { canSee: false, state: this.state };
+      }
+    }
+
     const { hasLineOfSight, inShadow } = context;
     const deltaSec = delta / 1000;
     const distance = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
@@ -96,6 +111,7 @@ export class Guard extends Phaser.Physics.Arcade.Sprite {
   }
 
   hearNoise(noise, source) {
+    if (this.stunTimer > 0) return false;
     const distance = Phaser.Math.Distance.Between(this.x, this.y, source.x, source.y);
     if (distance <= this.params.hearingRange && noise >= this.params.noiseThreshold) {
       this.lastHeardPos = { ...source };
@@ -135,6 +151,19 @@ export class Guard extends Phaser.Physics.Arcade.Sprite {
     const direction = Math.sign(point.x - this.x);
     this.setVelocityX(direction * speed);
     this.setFlipX(direction < 0);
+  }
+
+  stun(durationSec) {
+    this.stunTimer = Math.max(this.stunTimer, durationSec);
+    this.state = GuardState.STUNNED;
+    this.detectMeter = 0;
+    this.lastSeenPos = null;
+    this.lastHeardPos = null;
+    this.setVelocityX(0);
+  }
+
+  get isStunned() {
+    return this.stunTimer > 0;
   }
 }
 

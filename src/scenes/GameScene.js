@@ -43,6 +43,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
 
     this.createEntities();
+    this.createProjectiles();
     this.createHud();
     this.createTouchControls();
     this.createOrientationWatcher();
@@ -58,7 +59,16 @@ export class GameScene extends Phaser.Scene {
       this.respawnPoint = { x: checkpoint.x, y: checkpoint.y };
       checkpoint.setAlpha(1);
     });
-    this.physics.add.overlap(this.player, this.guards, () => this.handleDeath("caught"));
+    this.physics.add.overlap(this.player, this.guards, (player, guard) => {
+      if (guard.isStunned) return;
+      this.handleDeath("caught");
+    });
+    this.physics.add.overlap(this.projectiles, this.guards, (projectile, guard) => {
+      projectile.destroy();
+      guard.stun(3);
+    });
+    this.physics.add.collider(this.projectiles, this.wallLayer, (projectile) => projectile.destroy());
+    this.physics.add.collider(this.projectiles, this.groundLayer, (projectile) => projectile.destroy());
 
     this.keys = this.input.keyboard.addKeys({
       left: "A",
@@ -68,6 +78,8 @@ export class GameScene extends Phaser.Scene {
       jump: "SPACE",
       crouch: "S",
       crouchAlt: "DOWN",
+      attack: "J",
+      attackAlt: "K",
       pause: "ESC",
       retry: "R",
     });
@@ -84,6 +96,8 @@ export class GameScene extends Phaser.Scene {
     this.isStageEnding = false;
     this.respawnPoint = { ...this.level.entities.playerSpawn };
     this.noiseEvents = [];
+    this.attackCooldown = 0;
+    this.attackUsed = false;
 
     this.setupTutorial();
   }
@@ -99,13 +113,24 @@ export class GameScene extends Phaser.Scene {
       right: this.keys.right.isDown || this.keys.rightAlt.isDown || this.touchState.right,
       crouch: this.keys.crouch.isDown || this.keys.crouchAlt.isDown || this.touchState.crouch,
       jumpPressed: Phaser.Input.Keyboard.JustDown(this.keys.jump) || this.touchState.jumpPressed,
+      attackPressed:
+        Phaser.Input.Keyboard.JustDown(this.keys.attack) ||
+        Phaser.Input.Keyboard.JustDown(this.keys.attackAlt) ||
+        this.touchState.attackPressed,
     };
     this.touchState.jumpPressed = false;
+    this.touchState.attackPressed = false;
 
     this.player.update(delta, input, (noise) => this.noiseEvents.push(noise));
 
     if (this.player.y > this.worldBounds.height + this.level.tileSize) {
       this.handleDeath("fall");
+    }
+
+    this.attackCooldown = Math.max(0, this.attackCooldown - delta);
+    if (input.attackPressed && this.attackCooldown <= 0) {
+      this.fireProjectile();
+      this.attackCooldown = 400;
     }
 
     this.updateGuards(delta);
@@ -140,11 +165,21 @@ export class GameScene extends Phaser.Scene {
         anyAlert = true;
       }
       guard.stateIcon.setText(
-        info.state === GuardState.CHASE ? "!" : info.state === GuardState.ALERT ? "?" : ""
+        info.state === GuardState.CHASE
+          ? "!"
+          : info.state === GuardState.ALERT
+            ? "?"
+            : info.state === GuardState.STUNNED
+              ? "…"
+              : ""
       );
       guard.stateIcon.setPosition(guard.x, guard.y - 40);
       if (guard.visionCone) {
-        this.drawVisionCone(guard);
+        if (guard.isStunned) {
+          guard.visionCone.clear();
+        } else {
+          this.drawVisionCone(guard);
+        }
       }
     });
 
@@ -222,6 +257,27 @@ export class GameScene extends Phaser.Scene {
     this.shadowZones = this.level.zones.shadow.map(
       (zone) => new Phaser.Geom.Rectangle(zone.x, zone.y, zone.w, zone.h)
     );
+  }
+
+  createProjectiles() {
+    this.projectiles = this.physics.add.group();
+    this.physics.world.on("worldbounds", (body) => {
+      if (!body?.gameObject) return;
+      if (body.gameObject.texture?.key === "pellet") {
+        body.gameObject.destroy();
+      }
+    });
+  }
+
+  fireProjectile() {
+    const direction = this.player.flipX ? -1 : 1;
+    const pellet = this.projectiles.create(this.player.x + direction * 20, this.player.y - 6, "pellet");
+    pellet.setVelocityX(direction * 320);
+    pellet.setAllowGravity(false);
+    pellet.setCollideWorldBounds(true);
+    pellet.setSize(10, 10);
+    pellet.body.onWorldBounds = true;
+    this.attackUsed = true;
   }
 
   createHud() {
@@ -375,11 +431,18 @@ export class GameScene extends Phaser.Scene {
     graphics.fillRect(7, 7, 14, 14);
     graphics.generateTexture("checkpoint", 28, 28);
 
+    graphics.clear();
+    graphics.fillStyle(0xd8d3c4, 1);
+    graphics.fillCircle(6, 6, 6);
+    graphics.lineStyle(2, 0x8b7d66, 1);
+    graphics.strokeCircle(6, 6, 5);
+    graphics.generateTexture("pellet", 12, 12);
+
     graphics.destroy();
   }
 
   createTouchControls() {
-    this.touchState = { left: false, right: false, jumpPressed: false, crouch: false };
+    this.touchState = { left: false, right: false, jumpPressed: false, crouch: false, attackPressed: false };
     const opacity = (this.saveData.settings.touchOpacity ?? 70) / 100;
 
     const leftBtn = this.add.circle(80, this.scale.height - 80, 36, 0x1f2b40, opacity).setScrollFactor(0);
@@ -387,6 +450,8 @@ export class GameScene extends Phaser.Scene {
     const jumpBtn = this.add.circle(this.scale.width - 90, this.scale.height - 100, 44, 0x1f2b40, opacity)
       .setScrollFactor(0);
     const crouchBtn = this.add.circle(this.scale.width - 180, this.scale.height - 60, 32, 0x1f2b40, opacity)
+      .setScrollFactor(0);
+    const attackBtn = this.add.circle(this.scale.width - 190, this.scale.height - 120, 30, 0x1f2b40, opacity)
       .setScrollFactor(0);
     const pauseBtn = this.add.circle(this.scale.width - 40, 40, 18, 0xff5470, opacity).setScrollFactor(0);
 
@@ -402,10 +467,13 @@ export class GameScene extends Phaser.Scene {
     addButtonHandlers(jumpBtn, () => {
       this.touchState.jumpPressed = true;
     }, () => {});
+    addButtonHandlers(attackBtn, () => {
+      this.touchState.attackPressed = true;
+    }, () => {});
     addButtonHandlers(crouchBtn, () => (this.touchState.crouch = true), () => (this.touchState.crouch = false));
     addButtonHandlers(pauseBtn, () => this.pauseGame(), () => {});
 
-    this.touchControls = [leftBtn, rightBtn, jumpBtn, crouchBtn, pauseBtn];
+    this.touchControls = [leftBtn, rightBtn, jumpBtn, crouchBtn, attackBtn, pauseBtn];
   }
 
   createOrientationWatcher() {
@@ -492,6 +560,11 @@ export class GameScene extends Phaser.Scene {
           id: "crouch",
           text: "しゃがんでみよう\n(S / ↓)",
           check: () => this.player.isCrouching,
+        },
+        {
+          id: "attack",
+          text: "ゴム弾でロボをひるませよう\n(J / 攻撃ボタン)",
+          check: () => this.attackUsed,
         },
         {
           id: "shadow",
@@ -669,6 +742,8 @@ export class GameScene extends Phaser.Scene {
       time: this.elapsed,
       detected: this.detectedCount,
       deaths: this.deathCount,
+      bonus: this.attackUsed ? 0 : 500,
+      noAttackBonus: !this.attackUsed,
     };
     if (this.stageId === "tutorial") {
       this.saveData.cleared.tutorial = true;
