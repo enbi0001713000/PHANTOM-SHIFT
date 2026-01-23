@@ -12,8 +12,8 @@ export const DifficultyLabels = {
 
 export const DifficultyParams = {
   [Difficulty.EASY]: {
-    visionRange: 220,
-    visionFov: 55,
+    visionRange: 110,
+    visionFov: 28,
     detectRate: 60,
     coolRate: 140,
     hearingRange: 180,
@@ -26,8 +26,8 @@ export const DifficultyParams = {
     guardCount: 2,
   },
   [Difficulty.NORMAL]: {
-    visionRange: 260,
-    visionFov: 60,
+    visionRange: 130,
+    visionFov: 30,
     detectRate: 80,
     coolRate: 120,
     hearingRange: 220,
@@ -40,8 +40,8 @@ export const DifficultyParams = {
     guardCount: 3,
   },
   [Difficulty.HARD]: {
-    visionRange: 300,
-    visionFov: 70,
+    visionRange: 150,
+    visionFov: 35,
     detectRate: 110,
     coolRate: 100,
     hearingRange: 260,

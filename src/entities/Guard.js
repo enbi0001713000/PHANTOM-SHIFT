@@ -115,6 +115,13 @@ export class Guard extends Phaser.Physics.Arcade.Sprite {
     }
     const target = this.data.patrolPoints[this.patrolIndex];
     this.moveToPoint(target, this.params.speedPatrol);
+    if (
+      (this.body.blocked.right && this.body.velocity.x > 0) ||
+      (this.body.blocked.left && this.body.velocity.x < 0)
+    ) {
+      this.patrolIndex = (this.patrolIndex + 1) % this.data.patrolPoints.length;
+      return;
+    }
     if (Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y) < 8) {
       this.patrolIndex = (this.patrolIndex + 1) % this.data.patrolPoints.length;
     }
