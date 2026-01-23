@@ -17,7 +17,7 @@ export class StageSelectScene extends Phaser.Scene {
     this.stageInfoView = this.createStageInfoView();
 
     this.createButton(width / 2, height / 2 - 20, "チュートリアル", () => {
-      this.showStageInfo("tutorial", "ゲーム開始", () => {
+      this.showStageEpisode("tutorial", "ゲーム開始", () => {
         this.registry.set("selectedStage", "tutorial");
         this.registry.set("selectedDifficulty", "EASY");
         this.scene.start("GameScene", { stageId: "tutorial" });
@@ -25,7 +25,7 @@ export class StageSelectScene extends Phaser.Scene {
     });
 
     this.createButton(width / 2, height / 2 + 50, "1-1", () => {
-      this.showStageInfo("1-1", "難易度選択へ", () => {
+      this.showStageEpisode("1-1", "難易度選択へ", () => {
         this.registry.set("selectedStage", "1-1");
         this.scene.start("DifficultyScene", { stageId: "1-1" });
       });
@@ -93,6 +93,15 @@ export class StageSelectScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(7);
 
+    const continueHint = this.add
+      .text(width / 2, height / 2 + 40, "画面をクリック（スマホはタップ）してください", {
+        fontSize: "14px",
+        color: "#7dd7ff",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(7);
+
     const actionButton = this.createButton(width / 2, height / 2 + 80, "", () => {})
       .setDepth(7)
       .setScrollFactor(0);
@@ -103,7 +112,7 @@ export class StageSelectScene extends Phaser.Scene {
       .setDepth(7)
       .setScrollFactor(0);
 
-    const elements = [overlay, panel, title, description, actionButton, backButton];
+    const elements = [overlay, panel, title, description, continueHint, actionButton, backButton];
     elements.forEach((element) => element.setVisible(false));
 
     return {
@@ -111,28 +120,51 @@ export class StageSelectScene extends Phaser.Scene {
       panel,
       title,
       description,
+      continueHint,
       actionButton,
       backButton,
       setVisible: (visible) => elements.forEach((element) => element.setVisible(visible)),
     };
   }
 
-  showStageInfo(stageId, actionLabel, onConfirm) {
+  showStageEpisode(stageId, actionLabel, onConfirm) {
     const info = StageInfo[stageId];
     if (!info) return;
-    const lines = [info.summary, "", "やること:", ...info.objectives.map((text) => `・${text}`)];
-    this.stageInfoView.title.setText(info.title);
-    this.stageInfoView.description.setText(lines.join("\n"));
-    this.stageInfoView.actionButton.setText(actionLabel);
-    this.stageInfoView.actionButton.removeAllListeners("pointerdown");
-    this.stageInfoView.actionButton.on("pointerdown", () => {
-      this.hideStageInfo();
-      onConfirm();
+    const view = this.stageInfoView;
+    const showMission = () => {
+      const lines = [info.summary, "", "ミッション:", ...info.objectives.map((text) => `・${text}`)];
+      view.title.setText(`${info.title} ミッション`);
+      view.description.setText(lines.join("\n"));
+      view.actionButton.setText(actionLabel);
+      view.actionButton.setVisible(true);
+      view.actionButton.removeAllListeners("pointerdown");
+      view.actionButton.on("pointerdown", () => {
+        this.hideStageInfo();
+        onConfirm();
+      });
+      view.continueHint.setVisible(false);
+      view.overlay.removeAllListeners("pointerdown");
+    };
+
+    view.title.setText(`${info.title} エピソード`);
+    view.description.setText(info.episode.join("\n"));
+    view.actionButton.setVisible(false);
+    view.continueHint.setVisible(false);
+    view.overlay.removeAllListeners("pointerdown");
+    view.overlay.on("pointerdown", () => {
+      if (!view.continueHint.visible) return;
+      showMission();
     });
-    this.stageInfoView.setVisible(true);
+    view.setVisible(true);
+
+    this.time.delayedCall(600, () => {
+      if (!view.overlay.visible) return;
+      view.continueHint.setVisible(true);
+    });
   }
 
   hideStageInfo() {
+    this.stageInfoView.overlay.removeAllListeners("pointerdown");
     this.stageInfoView.setVisible(false);
   }
 }

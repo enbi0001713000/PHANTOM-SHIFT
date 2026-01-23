@@ -1,4 +1,5 @@
 import { TitleScene } from "./scenes/TitleScene.js";
+import { WorldStoryScene } from "./scenes/WorldStoryScene.js";
 import { StageSelectScene } from "./scenes/StageSelectScene.js";
 import { DifficultyScene } from "./scenes/DifficultyScene.js";
 import { GameScene } from "./scenes/GameScene.js";
@@ -25,6 +26,7 @@ const config = {
   },
   scene: [
     TitleScene,
+    WorldStoryScene,
     StageSelectScene,
     DifficultyScene,
     GameScene,

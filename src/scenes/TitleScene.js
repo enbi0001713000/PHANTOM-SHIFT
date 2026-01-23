@@ -20,7 +20,7 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.createButton(width / 2, height / 2 - 20, "ゲーム開始", () => {
-      this.scene.start("StageSelectScene");
+      this.scene.start("WorldStoryScene");
     });
     this.createButton(width / 2, height / 2 + 40, "ステージ選択", () => {
       this.scene.start("StageSelectScene");
