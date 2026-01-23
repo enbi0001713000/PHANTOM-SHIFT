@@ -273,7 +273,26 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  isTextureReady(key) {
+    const texture = this.textures.get(key);
+    if (!texture || texture.key === "__MISSING") return false;
+    const image = texture.getSourceImage();
+    return Boolean(image && image.width > 0 && image.height > 0);
+  }
+
   fireProjectile() {
+    if (!this.projectiles) {
+      this.createProjectiles();
+    }
+    if (!this.isTextureReady("pellet")) {
+      if (this.textures.exists("pellet")) {
+        this.textures.remove("pellet");
+      }
+      this.createTextures();
+    }
+    if (!this.isTextureReady("pellet")) {
+      return;
+    }
     if (!this.textures.exists("pellet")) {
       this.createTextures();
     }
