@@ -793,11 +793,6 @@ export class GameScene extends Phaser.Scene {
       duration: 1200,
       ease: "Sine.easeOut",
       onComplete: () => {
-        const tapZone = this.add
-          .zone(0, 0, width, height)
-          .setOrigin(0, 0)
-          .setScrollFactor(0)
-          .setInteractive();
         const promptText = isDesktop ? "画面をクリックしてリザルトへ" : "画面をタップしてリザルトへ";
         const prompt = this.add
           .text(width / 2, height / 2 + 20, promptText, {
@@ -809,19 +804,20 @@ export class GameScene extends Phaser.Scene {
           .setOrigin(0.5)
           .setScrollFactor(0);
 
+        let hasAdvanced = false;
         const advanceToResult = () => {
-          tapZone.disableInteractive();
-          tapZone.destroy();
+          if (hasAdvanced) return;
+          hasAdvanced = true;
           prompt.destroy();
           this.endStage();
         };
 
         const waitForNextTap = () => {
-          tapZone.once("pointerdown", advanceToResult);
+          this.input.once("pointerdown", advanceToResult);
         };
 
         if (this.input.activePointer.isDown) {
-          tapZone.once("pointerup", () => waitForNextTap());
+          this.input.once("pointerup", () => waitForNextTap());
         } else {
           waitForNextTap();
         }
