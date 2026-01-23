@@ -293,6 +293,9 @@ export class GameScene extends Phaser.Scene {
     if (!this.isTextureReady("pellet")) {
       return;
     }
+    if (!this.textures.exists("pellet")) {
+      this.createTextures();
+    }
     const direction = this.player.flipX ? -1 : 1;
     const pellet = this.projectiles.create(this.player.x + direction * 20, this.player.y - 6, "pellet");
     if (!pellet?.body) {
