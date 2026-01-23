@@ -33,12 +33,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (!this.isCrouching) {
         this.setSize(24, 28);
         this.setOffset(4, 20);
+        this.setTexture("player-crouch");
       }
       this.isCrouching = true;
     } else {
       if (this.isCrouching) {
         this.setSize(24, 40);
         this.setOffset(4, 8);
+        this.setTexture("player");
       }
       this.isCrouching = false;
     }

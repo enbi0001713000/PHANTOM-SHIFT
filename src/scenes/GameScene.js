@@ -311,6 +311,27 @@ export class GameScene extends Phaser.Scene {
     graphics.generateTexture("player", 32, 48);
 
     graphics.clear();
+    graphics.fillStyle(0x101218, 1);
+    graphics.fillRect(8, 24, 16, 16);
+    graphics.fillStyle(0x22252f, 1);
+    graphics.fillRect(6, 26, 4, 14);
+    graphics.fillRect(22, 26, 4, 14);
+    graphics.fillStyle(0xf4f1e6, 1);
+    graphics.fillRect(14, 26, 4, 8);
+    graphics.fillStyle(0xb72033, 1);
+    graphics.fillRect(16, 28, 2, 12);
+    graphics.fillStyle(0x0c0d12, 1);
+    graphics.fillRect(6, 32, 20, 10);
+    graphics.fillStyle(0x11151e, 1);
+    graphics.fillTriangle(6, 32, 26, 32, 32, 46);
+    graphics.fillTriangle(26, 32, 6, 32, 0, 46);
+    graphics.fillStyle(0x0a0b10, 1);
+    graphics.fillRect(10, 16, 12, 8);
+    graphics.fillStyle(0x1b1f2b, 1);
+    graphics.fillRect(12, 18, 8, 2);
+    graphics.generateTexture("player-crouch", 32, 48);
+
+    graphics.clear();
     graphics.fillStyle(0x808891, 1);
     graphics.fillRoundedRect(6, 16, 20, 26, 4);
     graphics.fillStyle(0xb9c1cc, 1);
