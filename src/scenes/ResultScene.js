@@ -22,6 +22,8 @@ export class ResultScene extends Phaser.Scene {
       `発見回数：${this.result.detected}`,
       `死亡回数：${this.result.deaths}`,
       this.result.noAttackBonus ? `ノーアタックボーナス：+${this.result.bonus}` : "ノーアタックボーナス：なし",
+      `スコア：${this.result.score}`,
+      `クリア評価：${"★".repeat(this.result.star)}${"☆".repeat(3 - this.result.star)}`,
       this.result.bestUpdated ? "ベスト更新！" : "ベスト未更新",
     ];
 
