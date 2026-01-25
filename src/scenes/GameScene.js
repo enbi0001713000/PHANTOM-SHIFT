@@ -786,6 +786,15 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setScrollFactor(0);
 
+    let prompt = null;
+    let hasAdvanced = false;
+    const advanceToResult = () => {
+      if (hasAdvanced) return;
+      hasAdvanced = true;
+      prompt?.destroy();
+      this.endStage();
+    };
+
     this.tweens.add({
       targets: successText,
       y: successText.y - 50,
@@ -794,7 +803,7 @@ export class GameScene extends Phaser.Scene {
       ease: "Sine.easeOut",
       onComplete: () => {
         const promptText = isDesktop ? "画面をクリックしてリザルトへ" : "画面をタップしてリザルトへ";
-        const prompt = this.add
+        prompt = this.add
           .text(width / 2, height / 2 + 20, promptText, {
             fontSize: "20px",
             color: "#e6f6ff",
@@ -803,14 +812,6 @@ export class GameScene extends Phaser.Scene {
           })
           .setOrigin(0.5)
           .setScrollFactor(0);
-
-        let hasAdvanced = false;
-        const advanceToResult = () => {
-          if (hasAdvanced) return;
-          hasAdvanced = true;
-          prompt.destroy();
-          this.endStage();
-        };
 
         const waitForNextTap = () => {
           this.input.once("pointerdown", advanceToResult);
@@ -823,6 +824,8 @@ export class GameScene extends Phaser.Scene {
         }
        },
     });
+
+    this.time.delayedCall(4000, advanceToResult);
   }
 
   endStage() {
@@ -833,6 +836,9 @@ export class GameScene extends Phaser.Scene {
       bonus: this.attackUsed ? 0 : 500,
       noAttackBonus: !this.attackUsed,
     };
+    const scoreResult = this.calculateScore(result);
+    result.score = scoreResult.score;
+    result.star = scoreResult.star;
     if (this.stageId === "tutorial") {
       this.saveData.cleared.tutorial = true;
       result.bestUpdated = true;
@@ -852,6 +858,22 @@ export class GameScene extends Phaser.Scene {
       result.bestUpdated = !before || before.bestTime === null || result.time <= before.bestTime;
     }
     this.scene.start("ResultScene", { result });
+  }
+
+  calculateScore(result) {
+    const baseScore = 3000;
+    const timePenalty = Math.round(result.time * 10);
+    const detectedPenalty = result.detected * 300;
+    const deathPenalty = result.deaths * 500;
+    const rawScore = baseScore - timePenalty - detectedPenalty - deathPenalty + result.bonus;
+    const score = Math.max(0, rawScore);
+    let star = 1;
+    if (score >= 2500) {
+      star = 3;
+    } else if (score >= 1500) {
+      star = 2;
+    }
+    return { score, star };
   }
 
   drawVisionCone(guard) {
