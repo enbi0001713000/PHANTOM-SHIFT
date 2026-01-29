@@ -813,8 +813,18 @@ export class GameScene extends Phaser.Scene {
           .setOrigin(0.5)
           .setScrollFactor(0);
 
+        // 改善: pointerdown / pointerup の両方を受け付ける安全なハンドラ
+        const tapHandler = () => {
+          // 二重実行防止のため、両方のリスナを必ず解除する
+          this.input.off("pointerdown", tapHandler);
+          this.input.off("pointerup", tapHandler);
+          advanceToResult();
+        };
+
         const waitForNextTap = () => {
-          this.input.once("pointerdown", advanceToResult);
+          // down / up のどちらかで進める（どちらかが発生したら tapHandler が実行される）
+          this.input.once("pointerdown", tapHandler);
+          this.input.once("pointerup", tapHandler);
         };
 
         if (this.input.activePointer.isDown) {
